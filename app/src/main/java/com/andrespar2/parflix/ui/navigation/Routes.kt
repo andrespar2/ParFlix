@@ -14,9 +14,20 @@ object Routes {
     const val ARG_SEASON = "season"
     const val ARG_EPISODE = "episode"
 
-    fun catalog(mediaType: String): String = "catalog/$mediaType"
+    // Catálogos. Se usan rutas literales distintas (en lugar de un único patrón
+    // con argumento) para que cada pestaña sea un destino propio y la barra
+    // inferior pueda alternar entre Películas, Series y Anime conservando el
+    // estado de cada una.
+    const val MOVIES = "catalog/movies"
+    const val TV_SHOWS = "catalog/series"
+    const val ANIMES = "catalog/anime"
 
-    fun catalogPattern(): String = "catalog/{$ARG_MEDIA_TYPE}"
+    /** Ruta del catálogo para un tipo concreto. */
+    fun catalog(mediaType: String): String = when (mediaType) {
+        "SERIES" -> TV_SHOWS
+        "ANIME" -> ANIMES
+        else -> MOVIES
+    }
 
     fun details(mediaType: String, tmdbId: Int): String = "details/$mediaType/$tmdbId"
 

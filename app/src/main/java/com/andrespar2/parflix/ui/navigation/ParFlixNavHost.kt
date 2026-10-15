@@ -1,5 +1,6 @@
 package com.andrespar2.parflix.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -40,14 +41,13 @@ private data class TopLevelDestination(
     val route: String,
     val label: String,
     val icon: ImageVector,
-    val mediaType: MediaType? = null,
 )
 
 private val topLevelDestinations = listOf(
     TopLevelDestination(Routes.HOME, "Inicio", Icons.Filled.Home),
-    TopLevelDestination(Routes.catalog(MediaType.MOVIE.name), "Películas", Icons.Filled.Movie, MediaType.MOVIE),
-    TopLevelDestination(Routes.catalog(MediaType.SERIES.name), "Series", Icons.Filled.Tv, MediaType.SERIES),
-    TopLevelDestination(Routes.catalog(MediaType.ANIME.name), "Anime", Icons.Filled.AutoAwesome, MediaType.ANIME),
+    TopLevelDestination(Routes.MOVIES, "Películas", Icons.Filled.Movie),
+    TopLevelDestination(Routes.TV_SHOWS, "Series", Icons.Filled.Tv),
+    TopLevelDestination(Routes.ANIMES, "Anime", Icons.Filled.AutoAwesome),
     TopLevelDestination(Routes.SEARCH, "Buscador", Icons.Filled.Search),
 )
 
@@ -56,25 +56,23 @@ fun ParFlixNavHost() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val currentTypeArg = backStackEntry?.arguments?.getString(Routes.ARG_MEDIA_TYPE)
+    val catalogRoutes = listOf(Routes.MOVIES, Routes.TV_SHOWS, Routes.ANIMES)
 
     val showBottomBar = currentRoute == Routes.HOME ||
         currentRoute == Routes.SEARCH ||
-        currentRoute == Routes.catalogPattern()
+        catalogRoutes.contains(currentRoute)
 
     Scaffold(
+        // Los insets del sistema los gestiona cada pantalla (su propio Scaffold
+        // y su TopAppBar). Si el Scaffold externo también los aplicara, el
+        // espacio del sistema se contaría dos veces y sobraría hueco arriba.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                     topLevelDestinations.forEach { destination ->
-                        val selected = when {
-                            destination.mediaType != null ->
-                                currentRoute == Routes.catalogPattern() &&
-                                    currentTypeArg == destination.mediaType.name
-                            else -> currentRoute == destination.route
-                        }
                         NavigationBarItem(
-                            selected = selected,
+                            selected = currentRoute == destination.route,
                             onClick = { navController.navigateTopLevel(destination.route) },
                             icon = { Icon(destination.icon, contentDescription = destination.label) },
                             label = { Text(destination.label) },
@@ -108,19 +106,17 @@ fun ParFlixNavHost() {
                 )
             }
 
-            composable(
-                route = Routes.catalogPattern(),
-                arguments = listOf(navArgument(Routes.ARG_MEDIA_TYPE) { type = NavType.StringType }),
-            ) { entry ->
-                val mediaType = entry.arguments?.getString(Routes.ARG_MEDIA_TYPE)
-                    ?.let { MediaType.fromString(it) } ?: MediaType.MOVIE
-                CatalogScreen(
-                    mediaType = mediaType,
-                    onBack = { navController.popBackStack() },
-                    onOpenDetails = { type, tmdbId ->
-                        navController.navigate(Routes.details(type.name, tmdbId))
-                    },
-                )
+            catalogRoutes.forEachIndexed { index, route ->
+                val type = listOf(MediaType.MOVIE, MediaType.SERIES, MediaType.ANIME)[index]
+                composable(route) {
+                    CatalogScreen(
+                        mediaType = type,
+                        onBack = { navController.popBackStack() },
+                        onOpenDetails = { mediaType, tmdbId ->
+                            navController.navigate(Routes.details(mediaType.name, tmdbId))
+                        },
+                    )
+                }
             }
 
             composable(Routes.SEARCH) {
