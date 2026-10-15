@@ -80,6 +80,16 @@ class DetailsRepository(
     fun observeSeasonEpisodes(tmdbId: Int, mediaType: MediaType, season: Int): Flow<List<EpisodeEntity>> =
         episodeDao.observeSeason(tmdbId, mediaType.name, season)
 
+    /** Un episodio concreto desde la caché local (para reproducir). */
+    suspend fun findEpisode(
+        tmdbId: Int,
+        mediaType: MediaType,
+        season: Int,
+        episode: Int,
+    ): EpisodeEntity? = withContext(Dispatchers.IO) {
+        episodeDao.season(tmdbId, mediaType.name, season).firstOrNull { it.episode == episode }
+    }
+
     /** @return true si la ficha quedó enriquecida con metadatos de TMDB. */
     suspend fun enrich(item: CatalogItemEntity, force: Boolean = false): Boolean {
         val type = item.type ?: return false
