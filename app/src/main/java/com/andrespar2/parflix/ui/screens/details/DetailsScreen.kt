@@ -420,7 +420,7 @@ private fun Actions(
         ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text(if (view.mediaType.isShow) "Reproducir T1 E1" else "Reproducir")
+            Text("Reproducir")
         }
         Spacer(Modifier.width(8.dp))
         IconButton(onClick = onToggleFavorite) {

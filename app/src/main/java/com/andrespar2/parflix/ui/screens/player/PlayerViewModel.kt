@@ -58,8 +58,23 @@ class PlayerViewModel(
                 return@launch
             }
 
-            val seasonArg = season.takeIf { it > 0 }
-            val episodeArg = episode.takeIf { it > 0 }
+            var seasonArg = season.takeIf { it > 0 }
+            var episodeArg = episode.takeIf { it > 0 }
+
+            // El botón "Reproducir" de la ficha de una serie no conoce
+            // temporada/episodio: se resuelve el primer episodio disponible.
+            if (mediaType.isShow && (seasonArg == null || episodeArg == null)) {
+                detailsRepository.firstPlayableEpisode(tmdbId, mediaType)?.let { (s, e) ->
+                    seasonArg = s
+                    episodeArg = e
+                }
+                // Sin episodios conocidos se asume el primero de la primera
+                // temporada: es lo que anuncia el propio botón.
+                if (seasonArg == null || episodeArg == null) {
+                    seasonArg = 1
+                    episodeArg = 1
+                }
+            }
 
             val storedEmbedUrl = if (mediaType.isShow && seasonArg != null && episodeArg != null) {
                 detailsRepository.findEpisode(tmdbId, mediaType, seasonArg, episodeArg)?.embedUrl

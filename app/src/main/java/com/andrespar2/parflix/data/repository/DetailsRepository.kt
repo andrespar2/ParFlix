@@ -90,6 +90,22 @@ class DetailsRepository(
         episodeDao.season(tmdbId, mediaType.name, season).firstOrNull { it.episode == episode }
     }
 
+    /**
+     * Primer episodio reproducible de una serie o anime. Se usa para el botón
+     * "Reproducir" de la ficha, que no conoce temporada ni episodio.
+     *
+     * Se resuelve en local y, si aún no hay episodios conocidos, se pide la
+     * primera temporada al proveedor. Devuelve null si no hay nada reproducible.
+     */
+    suspend fun firstPlayableEpisode(tmdbId: Int, mediaType: MediaType): Pair<Int, Int>? {
+        if (!mediaType.isShow) return null
+        withContext(Dispatchers.IO) { episodeDao.firstAvailable(tmdbId, mediaType.name) }
+            ?.let { return it.season to it.episode }
+        runCatching { ensureSeason(tmdbId, mediaType, 1) }
+        return withContext(Dispatchers.IO) { episodeDao.firstAvailable(tmdbId, mediaType.name) }
+            ?.let { it.season to it.episode }
+    }
+
     /** @return true si la ficha quedó enriquecida con metadatos de TMDB. */
     suspend fun enrich(item: CatalogItemEntity, force: Boolean = false): Boolean {
         val type = item.type ?: return false

@@ -86,6 +86,17 @@ interface EpisodeDao {
     @Query("SELECT COUNT(*) FROM episodes")
     suspend fun count(): Int
 
+    /** Primer episodio reproducible (para el botón "Reproducir" de la ficha). */
+    @Query(
+        """
+        SELECT * FROM episodes
+        WHERE tmdbId = :tmdbId AND mediaType = :mediaType AND available = 1
+        ORDER BY season ASC, episode ASC
+        LIMIT 1
+        """
+    )
+    suspend fun firstAvailable(tmdbId: Int, mediaType: String): EpisodeEntity?
+
     @Query("DELETE FROM episodes WHERE tmdbId = :tmdbId AND mediaType = :mediaType")
     suspend fun deleteForTitle(tmdbId: Int, mediaType: String)
 
