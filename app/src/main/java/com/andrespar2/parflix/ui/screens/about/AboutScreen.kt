@@ -98,8 +98,8 @@ fun AboutScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "ParFlix no depende de servidores propios, cuentas ni bases de datos " +
-                        "centrales. Cada dispositivo consulta directamente a los proveedores " +
-                        "(Vimeus para el catálogo y la reproducción, TMDB para los metadatos) y " +
+                        "centrales. Cada dispositivo consulta directamente a un proveedor " +
+                        "externo de catálogo y a TMDB (metadatos) y " +
                         "guarda una copia local para funcionar sin conexión. No hay registro de " +
                         "usuarios ni sincronización entre dispositivos.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -148,8 +148,8 @@ fun AboutScreen(onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "El catálogo y la reproducción provienen de Vimeus, respetando sus " +
-                        "condiciones y sin eludir ninguna protección del proveedor.",
+                    text = "El catálogo y la reproducción provienen de un proveedor externo, " +
+                        "respetando sus condiciones y sin eludir ninguna protección.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -88,7 +88,7 @@ class CredentialStore(context: Context) {
     fun describe(): String {
         val c = current()
         val parts = buildList {
-            add(if (c.hasVimeus) "Vimeus: definida" else "Vimeus: no configurada")
+            add(if (c.hasVimeus) "Catálogo: definida" else "Catálogo: no configurada")
             add(if (c.hasTmdb) "TMDB: definida" else "TMDB: no configurada")
             add(if (override().isComplete) "origen: usuario" else "origen: integrada en la APK")
         }

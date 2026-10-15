@@ -5,8 +5,8 @@ amplio catálogo actualizado automáticamente, búsqueda inteligente, informaci�
 detallada, reproducción integrada, favoritos e historial de visualización.
 
 > **Importante:** ParFlix no aloja contenido propio. La aplicación consume exclusivamente
-> los servicios externos configurados por la persona usuaria (catálogo Vimeus + metadatos
-> TMDB) y reproduce el contenido a través del reproductor web oficial de dichos servicios.
+> los servicios externos configurados por la persona usuaria (un proveedor de catálogo + metadatos
+> de TMDB) y reproduce el contenido a través del reproductor web oficial de dichos servicios.
 
 ---
 
@@ -34,12 +34,12 @@ ParFlix funciona **sin backend propio**. No usa servidores intermedios, bases de
 centrales, servicios de autenticación propios ni sincronización entre dispositivos:
 
 ```
-┌────────────┐   X-API-Key    ┌──────────────┐
-│  ParFlix   │ ─────────────▶ │ vimeus.com   │  Catálogo y URLs de reproducción
-│  (Android) │                └──────────────┘
-│            │   Bearer       ┌──────────────┐
-│  Room +    │ ─────────────▶ │ api.themoviedb│  Metadatos, imágenes y créditos
-│  DataStore │                └──────────────┘
+┌────────────┐   X-API-Key    ┌──────────────────┐
+│  ParFlix   │ ─────────────▶ │ proveedor de     │  Catálogo y URLs de reproducción
+│  (Android) │                │ catálogo         │
+│            │   Bearer       ┌──────────────────┐
+│  Room +    │ ─────────────▶ │ api.themoviedb   │  Metadatos, imágenes y créditos
+│  DataStore │                └──────────────────┘
 └────────────┘
        │
        ▼  SQLite/FTS4 en el dispositivo
@@ -78,11 +78,11 @@ centrales, servicios de autenticación propios ni sincronización entre disposit
 
 - **Conexión a Internet obligatoria**: sin conexión se muestran los datos cacheados
   (catálogo, favoritos, historial), pero no catálogo nuevo ni reproducción.
-- Las claves de API de Vimeus y TMDB se proporcionan **a nivel de dispositivo** mediante un
-  archivo de configuración privado (`secrets.properties`); nunca se incluyen en el repositorio.
+- Las claves de API del proveedor de catálogo y de TMDB se proporcionan **a nivel de dispositivo**
+  mediante un archivo de configuración privado (`secrets.properties`); nunca se incluyen en el repositorio.
 - La reproducción depende de la disponibilidad y compatibilidad del reproductor web del
-  proveedor: si un título no se reproduce, la app lo indica y ofrece reintento o apertura
-  en ventana externa. ParFlix no evita DRM ni restricciones del proveedor.
+  proveedor: si un título no se reproduce, la app lo indica y ofrece reintento. ParFlix no
+  evita DRM ni restricciones del proveedor.
 - La reproducción no se ha verificado automáticamente en CI; se realiza en un dispositivo
   físico/emulador de forma manual.
 
@@ -112,8 +112,9 @@ centrales, servicios de autenticación propios ni sincronización entre disposit
 
    | Clave | Descripción |
    | --- | --- |
-   | `VIMEUS_API_KEY` | Clave del catálogo (`X-API-Key`). |
-   | `VIMEUS_BASE_URL` | Por defecto `https://vimeus.com`. |
+   | `PROVIDER_API_KEY` | Clave del catálogo (`X-API-Key`). |
+   | `PROVIDER_BASE_URL` | URL base del proveedor de catálogo. |
+   | `PROVIDER_VIEW_KEY` | Clave de reproducción (`view_key`). |
    | `TMDB_ACCESS_TOKEN` | Token de lectura de TMDB (`Authorization: Bearer`). |
 
 2. (Opcional) En release se puede definir el keystore de firma:
@@ -147,7 +148,8 @@ Cada APK se publica como Release en GitHub con su APK adjunto.
 
 ## Proveedores y atribución
 
-- Catálogo y reproducción: **Vimeus** (integración de terceros, sujeta a sus términos).
+- Catálogo y reproducción: un proveedor externo configurado por la persona usuaria
+  (integración de terceros sujeta a sus propios términos).
 - Metadatos, imágenes y créditos: [TMDB](https://www.themoviedb.org/). Esta aplicación
   utiliza la API de TMDB pero no está respaldada ni certificada por TMDB.
 

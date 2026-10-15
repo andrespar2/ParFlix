@@ -63,8 +63,8 @@ val generateObfuscatedSecrets = tasks.register("generateObfuscatedSecrets") {
         val outFile = File(outDir, "com/andrespar2/parflix/core/security/BuildTimeSecrets.kt")
         outFile.parentFile.mkdirs()
 
-        val f1 = encode(valueOf("vimeus.api.key"))
-        val f2 = encode(valueOf("vimeus.view.key"))
+        val f1 = encode(valueOf("provider.api.key"))
+        val f2 = encode(valueOf("provider.view.key"))
         val f3 = encode(valueOf("tmdb.read.access.token"))
         val f4 = encode(valueOf("tmdb.api.key"))
 

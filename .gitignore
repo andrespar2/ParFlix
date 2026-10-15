@@ -9,6 +9,7 @@ build/
 captures/
 .externalNativeBuild/
 .cxx/
+.kotlin/
 
 # Local configuration (SDK path, secrets)
 local.properties

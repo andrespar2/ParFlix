@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.view.View
 import android.view.ViewGroup
@@ -53,7 +52,13 @@ import com.andrespar2.parflix.domain.MediaType
 import com.andrespar2.parflix.ui.components.ErrorState
 import com.andrespar2.parflix.ui.rememberContainer
 
-private const val VIMEUS_HOST = "vimeus.com"
+private val PLAYBACK_HOSTS = listOf("vimeus.com", "vimeos.net", "lamovie.link")
+
+/** Se permite solo HTTPS del proveedor en la ventana principal. */
+private fun isAllowedHost(host: String?): Boolean {
+    val value = host?.lowercase() ?: return false
+    return PLAYBACK_HOSTS.any { value == it || value.endsWith(".$it") }
+}
 
 /**
  * Reproductor integrado (WebView) sobre la página de inserción oficial de
@@ -182,15 +187,16 @@ fun PlayerScreen(
                                             request: WebResourceRequest,
                                         ): Boolean {
                                             val target = request.url
+                                            // Solo se decide sobre navegaciones de la
+                                            // ventana principal. Los subprocesos (iframes
+                                            // del reproductor, anuncios del proveedor) deben
+                                            // cargarse dentro del WebView.
+                                            if (!request.isForMainFrame) return false
                                             val allowed = target.scheme == "https" &&
                                                 isAllowedHost(target.host)
                                             if (allowed) return false
-                                            // Enlaces externos o no autorizados: fuera de la app.
-                                            runCatching {
-                                                view.context.startActivity(
-                                                    Intent(Intent.ACTION_VIEW, target)
-                                                )
-                                            }
+                                            // Navegación no autorizada: se bloquea para
+                                            // mantener a la persona usuaria dentro de la app.
                                             return true
                                         }
 
@@ -237,6 +243,44 @@ fun PlayerScreen(
                                             customView = null
                                             customCallback?.onCustomViewHidden()
                                             customCallback = null
+                                        }
+
+                                        /**
+                                         * El reproductor del proveedor usa ventanas emergentes
+                                         * para su flujo de reproducción y de anuncios. En lugar
+                                         * de bloquearlas, se cargan en el propio WebView cuando
+                                         * pertenecen a los dominios del proveedor; el resto se
+                                         * ignora para no abrir pestañas no deseadas.
+                                         */
+                                        override fun onCreateWindow(
+                                            view: WebView,
+                                            isDialog: Boolean,
+                                            isUserGesture: Boolean,
+                                            resultMsg: android.os.Message,
+                                        ): Boolean {
+                                            val popup = WebView(view.context).apply {
+                                                settings.javaScriptEnabled = true
+                                                settings.domStorageEnabled = true
+                                            }
+                                            popup.webViewClient = object : WebViewClient() {
+                                                override fun shouldOverrideUrlLoading(
+                                                    v: WebView,
+                                                    request: WebResourceRequest,
+                                                ): Boolean {
+                                                    val target = request.url
+                                                    if (target.scheme == "https" &&
+                                                        isAllowedHost(target.host)
+                                                    ) {
+                                                        view.loadUrl(target.toString())
+                                                    }
+                                                    popup.destroy()
+                                                    return true
+                                                }
+                                            }
+                                            (resultMsg.obj as? WebView.WebViewTransport)
+                                                ?.webView = popup
+                                            resultMsg.sendToTarget()
+                                            return true
                                         }
                                     }
                                     webViewRef = this
@@ -294,6 +338,7 @@ private fun PlayerBar(title: String?, onBack: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White,
             maxLines = 1,
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -305,17 +350,13 @@ private fun WebView.configureForPlayback() {
     settings.loadWithOverviewMode = true
     settings.useWideViewPort = true
     settings.cacheMode = WebSettings.LOAD_DEFAULT
-    settings.setSupportMultipleWindows(false)
-    settings.javaScriptCanOpenWindowsAutomatically = false
+    // El reproductor del proveedor puede abrir ventanas para su flujo; se
+    // gestionan dentro de la app (ver onCreateWindow) en lugar de bloquearlas.
+    settings.setSupportMultipleWindows(true)
+    settings.javaScriptCanOpenWindowsAutomatically = true
     settings.allowFileAccess = false
     settings.allowContentAccess = false
     setBackgroundColor(android.graphics.Color.BLACK)
-}
-
-/** Solo se permite HTTPS del dominio autorizado en la ventana principal. */
-private fun isAllowedHost(host: String?): Boolean {
-    val value = host?.lowercase() ?: return false
-    return value == VIMEUS_HOST || value.endsWith(".$VIMEUS_HOST")
 }
 
 private fun Context.findActivity(): Activity? {

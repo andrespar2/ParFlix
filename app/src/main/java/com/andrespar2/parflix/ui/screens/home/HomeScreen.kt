@@ -139,7 +139,7 @@ fun HomeScreen(
                 item {
                     EmptyState(
                         message = "Cargando el catálogo",
-                        detail = "ParFlix está descargando títulos desde Vimeus. " +
+                        detail = "ParFlix está descargando títulos del catálogo. " +
                             "El contenido aparecerá en cuanto llegue la primera página.",
                     )
                 }

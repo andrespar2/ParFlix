@@ -322,7 +322,7 @@ class CatalogSynchronizer(
                     delay(INTER_PAGE_DELAY_MS)
                 }
                 is ApiResult.HttpError -> {
-                    lastError = "Vimeus respondió ${result.code}" + (result.message?.let { ": $it" } ?: "")
+                    lastError = "El proveedor respondió ${result.code}" + (result.message?.let { ": $it" } ?: "")
                     break
                 }
                 is ApiResult.NetworkError -> {
@@ -330,7 +330,7 @@ class CatalogSynchronizer(
                     break
                 }
                 is ApiResult.DataError -> {
-                    lastError = "Respuesta inesperada de Vimeus: ${result.cause}"
+                    lastError = "Respuesta inesperada del proveedor: ${result.cause}"
                     break
                 }
             }
@@ -374,7 +374,7 @@ class CatalogSynchronizer(
             MediaType.ANIME -> vimeus.animes(page)
         }
         if (envelope.error == true) {
-            throw IllegalStateException(envelope.message ?: "Vimeus devolvió error")
+            throw IllegalStateException(envelope.message ?: "El proveedor devolvió un error")
         }
         return envelope.data ?: VimeusListingData()
     }
