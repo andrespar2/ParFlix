@@ -26,9 +26,9 @@ object ImageUrls {
 
     private fun build(path: String?, size: String): String? {
         if (path.isNullOrBlank()) return null
-        val clean = if (path.startsWith("/")) path else "/$path"
         // Algunos registros de Vimeus ya traen la URL completa.
-        if (clean.startsWith("http")) return clean
+        if (path.startsWith("http://") || path.startsWith("https://")) return path
+        val clean = if (path.startsWith("/")) path else "/$path"
         return "$BASE/$size$clean"
     }
 }
