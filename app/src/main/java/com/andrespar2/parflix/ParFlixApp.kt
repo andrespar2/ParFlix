@@ -34,6 +34,10 @@ class ParFlixApp : Application(), Configuration.Provider {
         instance = this
         container = AppContainer(this)
 
+        // Start.io se inicializa una sola vez, sin ads de retorno ni formatos
+        // automáticos. Ver AdsConfig para identificadores y frecuencias.
+        container.adsManager.init()
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             AppForegroundSync(
                 catalogRepository = container.catalogRepository,
