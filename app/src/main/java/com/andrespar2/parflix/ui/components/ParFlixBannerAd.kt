@@ -46,9 +46,8 @@ fun ParFlixBannerAd(
     val isInitialized by adsManager.isInitialized.collectAsStateWithLifecycle()
     val bannerState by adsManager.bannerState.collectAsStateWithLifecycle()
 
-    // Una sola petición por sesión, al mostrarse la primera vez con el SDK listo.
-    LaunchedEffect(isInitialized) {
-        if (isInitialized) adsManager.requestBannerIfNeeded()
+    LaunchedEffect(isInitialized, bannerState) {
+        if (isInitialized) adsManager.requestBannerIfNeeded(force = false)
     }
 
     val bannerView = (bannerState as? AdSlotState.Ready)?.ad as? View ?: return

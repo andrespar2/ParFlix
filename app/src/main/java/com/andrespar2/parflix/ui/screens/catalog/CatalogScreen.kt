@@ -74,7 +74,7 @@ fun CatalogScreen(
     // ranuras disponibles. Al cambiar el número de anuncios cargados se vuelve
     // a evaluar (permite cargar el segundo sin bucles: el ViewModel y
     // AdsManager aplican el enfriamiento y el tope por pantalla).
-    LaunchedEffect(items.size, nativeAds.size) {
+    LaunchedEffect(items.size, nativeAds.size, container.adsManager.isInitialized) {
         viewModel.requestNativeAds(items.size)
     }
 

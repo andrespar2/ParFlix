@@ -2,6 +2,7 @@ package com.andrespar2.parflix.ads
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.util.Log
 import android.view.View
 import com.startapp.sdk.ads.banner.BannerCreator
 import com.startapp.sdk.ads.banner.BannerFormat
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.coroutines.resume
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** Estado de una ranura publicitaria. */
@@ -58,11 +60,13 @@ class AdsManager(context: Context) {
 
     private var bannerView: View? = null
     private var bannerRequested = false
+    private var lastBannerFailureAt = 0L
 
     private var lastNativeFailureAt = 0L
 
     private val isDebuggable: Boolean =
         (appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    private val tag = "ParFlixAds"
 
     /**
      * Inicializa el SDK. Idempotente: las llamadas posteriores no hacen nada.
@@ -71,19 +75,23 @@ class AdsManager(context: Context) {
     @Suppress("DEPRECATION")
     @Synchronized
     fun init() {
-        if (_isInitialized.value) return
+        if (_isInitialized.value) {
+            Log.d(tag, "init: SDK ya inicializado. isDebuggable=$isDebuggable, appId=${AdsConfig.START_IO_APP_ID}")
+            return
+        }
 
+        Log.d(tag, "init: inicializando Start.io. isDebuggable=$isDebuggable, TEST_ADS_IN_DEBUG=${AdsConfig.TEST_ADS_IN_DEBUG}, appId=${AdsConfig.START_IO_APP_ID}")
         if (AdsConfig.TEST_ADS_IN_DEBUG && isDebuggable) {
-            // Solo depuración: en release se piden anuncios reales.
+            Log.d(tag, "init: habilitando test ads (DEBUG)")
             StartAppSDK.setTestAdsEnabled(true)
         }
 
         StartAppSDK.initParams(appContext, AdsConfig.START_IO_APP_ID)
-            // `setReturnAdsEnabled` está obsoleto: Start.io gestiona los ads de
-            // salida desde el portal. Se desactiva aquí igualmente para que la
-            // APK no active formatos automáticos aunque el portal los habilite.
             .setReturnAdsEnabled(AdsConfig.RETURN_ADS_ENABLED)
-            .setCallback { _isInitialized.value = true }
+            .setCallback {
+                Log.d(tag, "init: callback recibido - SDK inicializado")
+                _isInitialized.value = true
+            }
             .init()
     }
 
@@ -104,36 +112,72 @@ class AdsManager(context: Context) {
     fun bannerView(): View? = bannerView
 
     /**
-     * Pide el banner si aún no se ha cargado ni fallado. La vista se cachea:
-     * navegar entre pestañas no vuelve a pedir el anuncio ni lo duplica.
+     * Indica si conviene esperar antes de volver a pedir el banner tras un fallo.
      */
-    fun requestBannerIfNeeded() {
-        if (bannerRequested) return
-        if (!_isInitialized.value) return
+    fun shouldSkipBannerRetry(): Boolean {
+        if (lastBannerFailureAt == 0L) return false
+        return System.currentTimeMillis() - lastBannerFailureAt < AdsConfig.AD_RETRY_COOLDOWN_MS
+    }
+
+    /**
+     * Fuerza una nueva petición de banner si no hay uno cacheado.
+     * No fuerza si ya está Ready.
+     */
+    fun requestBannerIfNeeded(force: Boolean = false) {
+        if (bannerView != null && bannerState.value is AdSlotState.Ready) {
+            Log.d(tag, "banner: ya existe vista cacheada, skip")
+            return
+        }
+        if (!_isInitialized.value) {
+            Log.d(tag, "banner: SDK no inicializado, no se solicita")
+            return
+        }
+        if (!force && shouldSkipBannerRetry()) {
+            Log.d(tag, "banner: cooldown tras fallo, skip. lastFailure=${lastBannerFailureAt}")
+            return
+        }
+        if (bannerRequested && !force && bannerState.value is AdSlotState.Loading) {
+            Log.d(tag, "banner: ya en carga")
+            return
+        }
 
         bannerRequested = true
         _bannerState.value = AdSlotState.Loading
+        Log.d(tag, "banner: solicitando BannerRequest (320x50), force=$force")
 
         BannerRequest(appContext)
             .setAdFormat(BannerFormat.BANNER)
             .load { creator: BannerCreator?, error: String? ->
                 if (creator != null && error == null) {
+                    Log.d(tag, "banner: onLoad ok - creando vista")
                     val view = creator.create(appContext, object : BannerListener {
-                        override fun onReceiveAd(banner: View) = Unit
-                        override fun onFailedToReceiveAd(banner: View) {
-                            bannerView = null
-                            _bannerState.value = AdSlotState.Failed
+                        override fun onReceiveAd(banner: View) {
+                            Log.d(tag, "banner: onReceiveAd")
                         }
-                        override fun onImpression(banner: View) = Unit
-                        override fun onClick(banner: View) = Unit
+                        override fun onFailedToReceiveAd(banner: View) {
+                            Log.d(tag, "banner: onFailedToReceiveAd")
+                            bannerView = null
+                            lastBannerFailureAt = System.currentTimeMillis()
+                            _bannerState.value = AdSlotState.Failed
+                            bannerRequested = false
+                        }
+                        override fun onImpression(banner: View) {
+                            Log.d(tag, "banner: onImpression")
+                        }
+                        override fun onClick(banner: View) {
+                            Log.d(tag, "banner: onClick")
+                        }
                     })
                     bannerView = view
+                    lastBannerFailureAt = 0L
                     _bannerState.value = AdSlotState.Ready(view)
+                    Log.d(tag, "banner: READY")
                 } else {
-                    // Sin inventario: se oculta el contenedor y no se repite la
-                    // petición. El SDK gestiona su propia recarga automática.
+                    Log.d(tag, "banner: onLoad error. error=$error creatorNull=${creator == null}")
                     bannerView = null
+                    lastBannerFailureAt = System.currentTimeMillis()
                     _bannerState.value = AdSlotState.Failed
+                    bannerRequested = false
                 }
             }
     }
@@ -150,6 +194,13 @@ class AdsManager(context: Context) {
      * llama mediante [shouldSkipNativeRetry].
      */
     suspend fun loadNativeAd(): NativeAdDetails? {
+        if (!_isInitialized.value) {
+            // Espera breve a la inicialización si aún no ha terminado
+            val start = System.currentTimeMillis()
+            while (!_isInitialized.value && System.currentTimeMillis() - start < 5000) {
+                kotlinx.coroutines.delay(50)
+            }
+        }
         if (!_isInitialized.value) return null
 
         val ad = requestNativeAd()
@@ -169,6 +220,7 @@ class AdsManager(context: Context) {
 
     private suspend fun requestNativeAd(): NativeAdDetails? =
         suspendCancellableCoroutine { continuation ->
+            Log.d(tag, "native: solicitando StartAppNativeAd (autoBitmap=true, adsNumber=1)")
             val preferences = NativeAdPreferences().apply {
                 setAutoBitmapDownload(true)
                 setAdsNumber(1)
@@ -179,10 +231,12 @@ class AdsManager(context: Context) {
             nativeAd.loadAd(object : AdEventListener {
                 override fun onReceiveAd(ad: Ad) {
                     val details = nativeAd.nativeAds?.firstOrNull()
+                    Log.d(tag, "native: onReceiveAd - details=${if (details == null) "null" else "present"} count=${nativeAd.nativeAds?.size ?: 0}")
                     if (continuation.isActive) continuation.resume(details)
                 }
 
                 override fun onFailedToReceiveAd(ad: Ad?) {
+                    Log.d(tag, "native: onFailedToReceiveAd ad=$ad")
                     if (continuation.isActive) continuation.resume(null)
                 }
             })

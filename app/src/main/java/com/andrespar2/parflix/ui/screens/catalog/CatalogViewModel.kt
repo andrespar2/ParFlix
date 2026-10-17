@@ -94,9 +94,17 @@ class CatalogViewModel(
         nativeLoading = true
         viewModelScope.launch {
             val ad = adsManager.loadNativeAd()
-            if (ad != null) _nativeAds.update { it + ad }
+            if (ad != null) {
+                _nativeAds.update { it + ad }
+            }
             nativeLoading = false
         }
+    }
+
+    fun clearNativeAds() {
+        _nativeAds.value.forEach { it.unregisterView() }
+        _nativeAds.value = emptyList()
+        nativeLoading = false
     }
 
     override fun onCleared() {
