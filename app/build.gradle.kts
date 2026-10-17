@@ -221,7 +221,7 @@ dependencies {
     // Imágenes
     implementation(libs.coil.compose)
     // Publicidad Start.io
-    implementation("com.startapp:inapp-sdk:5.2.5")
+    implementation(libs.startapp.inapp.sdk)
 
     // Trabajos en segundo plano y preferencias
     implementation(libs.androidx.work.runtime.ktx)
