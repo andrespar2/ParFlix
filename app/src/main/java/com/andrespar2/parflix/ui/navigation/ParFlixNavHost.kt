@@ -1,5 +1,6 @@
 package com.andrespar2.parflix.ui.navigation
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.andrespar2.parflix.domain.MediaType
+import com.andrespar2.parflix.ui.components.ParFlixBannerAd
+import com.andrespar2.parflix.ui.rememberContainer
 import com.andrespar2.parflix.ui.screens.about.AboutScreen
 import com.andrespar2.parflix.ui.screens.catalog.CatalogScreen
 import com.andrespar2.parflix.ui.screens.details.DetailsScreen
@@ -62,26 +65,40 @@ fun ParFlixNavHost() {
         currentRoute == Routes.SEARCH ||
         catalogRoutes.contains(currentRoute)
 
+    // El banner solo aparece en pantallas de catálogo. Nunca en el reproductor,
+    // detalles, biblioteca, ajustes ni diálogos.
+    val showBanner = currentRoute == Routes.HOME || catalogRoutes.contains(currentRoute)
+
+    val container = rememberContainer()
+
     Scaffold(
         // Los insets del sistema los gestiona cada pantalla (su propio Scaffold
         // y su TopAppBar). Si el Scaffold externo también los aplicara, el
         // espacio del sistema se contaría dos veces y sobraría hueco arriba.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (showBottomBar) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    topLevelDestinations.forEach { destination ->
-                        NavigationBarItem(
-                            selected = currentRoute == destination.route,
-                            onClick = { navController.navigateTopLevel(destination.route) },
-                            icon = { Icon(destination.icon, contentDescription = destination.label) },
-                            label = { Text(destination.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.surfaceVariant,
-                            ),
-                        )
+            Column {
+                // Un único banner, encima de la barra de navegación. Al estar
+                // en la misma posición del árbol, cambiar de pestaña no lo
+                // duplica ni vuelve a pedir inventario.
+                if (showBanner) {
+                    ParFlixBannerAd(adsManager = container.adsManager)
+                }
+                if (showBottomBar) {
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                        topLevelDestinations.forEach { destination ->
+                            NavigationBarItem(
+                                selected = currentRoute == destination.route,
+                                onClick = { navController.navigateTopLevel(destination.route) },
+                                icon = { Icon(destination.icon, contentDescription = destination.label) },
+                                label = { Text(destination.label) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                                ),
+                            )
+                        }
                     }
                 }
             }
