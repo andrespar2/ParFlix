@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andrespar2.parflix.domain.MediaType
 import com.andrespar2.parflix.ui.components.EmptyState
+import com.andrespar2.parflix.ui.components.ParFlixNativeAdCard
 import com.andrespar2.parflix.ui.components.PosterCard
 import com.andrespar2.parflix.ui.model.toCard
 import com.andrespar2.parflix.ui.rememberContainer
@@ -60,8 +61,22 @@ fun CatalogScreen(
     val genres by viewModel.genres.collectAsStateWithLifecycle(emptyList())
     val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
     val total by viewModel.totalCount.collectAsStateWithLifecycle(0)
+    val nativeAds by viewModel.nativeAds.collectAsStateWithLifecycle(emptyList())
 
     val gridState = rememberLazyGridState()
+
+    // Intercala los anuncios nativos ya cargados entre las tarjetas reales.
+    // Las claves de las tarjetas se mantienen estables, así que insertar
+    // publicidad no recompone ni reinicia la posición del contenido.
+    val cells = remember(items, nativeAds) { buildCatalogCells(items, nativeAds) }
+
+    // Pide anuncios nativos solo cuando hay contenido suficiente para las
+    // ranuras disponibles. Al cambiar el número de anuncios cargados se vuelve
+    // a evaluar (permite cargar el segundo sin bucles: el ViewModel y
+    // AdsManager aplican el enfriamiento y el tope por pantalla).
+    LaunchedEffect(items.size, nativeAds.size) {
+        viewModel.requestNativeAds(items.size)
+    }
 
     // Paginación local: al acercarse al final se amplía la ventana visible.
     val shouldLoadMore by remember {
@@ -139,12 +154,31 @@ fun CatalogScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    items(items, key = { "${it.mediaType}:${it.tmdbId}" }) { item ->
-                        PosterCard(
-                            data = item.toCard(),
-                            onClick = { onOpenDetails(mediaType, item.tmdbId) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    items(
+                        items = cells,
+                        key = { it.key },
+                        span = { cell ->
+                            // El anuncio ocupa toda la fila para no romper la
+                            // cuadrícula de portadas; el contenido sigue igual.
+                            if (cell is CatalogCell.Sponsored) {
+                                GridItemSpan(maxLineSpan)
+                            } else {
+                                GridItemSpan(1)
+                            }
+                        },
+                    ) { cell ->
+                        when (cell) {
+                            is CatalogCell.Content -> PosterCard(
+                                data = cell.item.toCard(),
+                                onClick = { onOpenDetails(mediaType, cell.item.tmdbId) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+
+                            is CatalogCell.Sponsored -> ParFlixNativeAdCard(
+                                ad = cell.ad,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         CircularProgressIndicator(
