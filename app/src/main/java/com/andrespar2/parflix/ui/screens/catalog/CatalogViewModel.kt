@@ -15,6 +15,7 @@ import com.andrespar2.parflix.domain.MediaType
 import com.startapp.sdk.ads.nativead.NativeAdDetails
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +45,11 @@ class CatalogViewModel(
 
     private val queryState = MutableStateFlow(Query(visible = PAGE_SIZE, genreId = null))
 
+    private var genreJob: Job? = null
+
+    private val _genreLoading = MutableStateFlow(false)
+    val genreLoading: StateFlow<Boolean> = _genreLoading.asStateFlow()
+
     val items: Flow<List<CatalogItemEntity>> = queryState.flatMapLatest { query ->
         val genreId = query.genreId
         if (genreId == null) {
@@ -72,6 +78,25 @@ class CatalogViewModel(
     fun selectGenre(genreId: Int?) {
         _selectedGenre.value = genreId
         queryState.update { it.copy(genreId = genreId, visible = PAGE_SIZE) }
+
+        genreJob?.cancel()
+        if (genreId == null) {
+            _genreLoading.value = false
+            return
+        }
+
+        // Al elegir una categoría se consulta TMDB Discover y se enlazan los
+        // títulos que ya existen en el catálogo. Room emite y la cuadrícula se
+        // actualiza sola; si no hay conexión, se muestra lo que ya estuviera
+        // enlazado localmente.
+        genreJob = viewModelScope.launch {
+            _genreLoading.value = true
+            try {
+                catalogRepository.syncGenreLinks(mediaType, genreId)
+            } finally {
+                if (_selectedGenre.value == genreId) _genreLoading.value = false
+            }
+        }
     }
 
     fun loadMore() {

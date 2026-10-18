@@ -44,6 +44,25 @@ interface TmdbApi {
     @GET("genre/tv/list")
     suspend fun tvGenres(): TmdbGenreListDto
 
+    /**
+     * Descubre títulos de un género. Se usa para poblar las filas por categoría
+     * del catálogo local (solo se conservan los títulos que ya existen y se
+     * pueden ver en ParFlix).
+     */
+    @GET("discover/movie")
+    suspend fun discoverMovies(
+        @Query("with_genres") genreId: Int,
+        @Query("page") page: Int,
+        @Query("sort_by") sortBy: String = POPULARITY_DESC,
+    ): TmdbListItemPageDto
+
+    @GET("discover/tv")
+    suspend fun discoverTv(
+        @Query("with_genres") genreId: Int,
+        @Query("page") page: Int,
+        @Query("sort_by") sortBy: String = POPULARITY_DESC,
+    ): TmdbListItemPageDto
+
     /** Búsqueda remota (complemento opcional de la búsqueda local). */
     @GET("search/multi")
     suspend fun searchMulti(
@@ -56,5 +75,8 @@ interface TmdbApi {
             "alternative_titles,translations,credits,videos,external_ids,recommendations,similar,release_dates"
         const val APPEND_TV =
             "alternative_titles,translations,credits,videos,external_ids,recommendations,similar,content_ratings"
+
+        /** Orden por defecto de los descubrimientos por género. */
+        const val POPULARITY_DESC = "popularity.desc"
     }
 }

@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andrespar2.parflix.domain.MediaType
 import com.andrespar2.parflix.ui.components.EmptyState
+import com.andrespar2.parflix.ui.components.LoadingBox
 import com.andrespar2.parflix.ui.components.ParFlixNativeAdCard
 import com.andrespar2.parflix.ui.components.PosterCard
 import com.andrespar2.parflix.ui.model.toCard
@@ -60,6 +61,7 @@ fun CatalogScreen(
     val items by viewModel.items.collectAsStateWithLifecycle(emptyList())
     val genres by viewModel.genres.collectAsStateWithLifecycle(emptyList())
     val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
+    val genreLoading by viewModel.genreLoading.collectAsStateWithLifecycle()
     val total by viewModel.totalCount.collectAsStateWithLifecycle(0)
     val nativeAds by viewModel.nativeAds.collectAsStateWithLifecycle(emptyList())
     val adsInitialized by container.adsManager.isInitialized.collectAsStateWithLifecycle()
@@ -144,11 +146,15 @@ fun CatalogScreen(
             }
 
             if (items.isEmpty()) {
-                EmptyState(
-                    message = "Sin resultados todavía",
-                    detail = "La sincronización del catálogo está en curso. " +
-                        "Desliza para actualizar o revisa tu conexión.",
-                )
+                if (genreLoading) {
+                    LoadingBox()
+                } else {
+                    EmptyState(
+                        message = "Sin resultados todavía",
+                        detail = "La sincronización del catálogo está en curso. " +
+                            "Desliza para actualizar o revisa tu conexión.",
+                    )
+                }
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 110.dp),

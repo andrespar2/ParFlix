@@ -20,6 +20,9 @@ data class CatalogRef(
     val title: String,
 )
 
+/** Pares (id local, tmdbId) para enlazar géneros sin cargar la fila completa. */
+data class CatalogIdRef(val id: Long, val tmdbId: Int)
+
 @Dao
 interface CatalogDao {
 
@@ -37,6 +40,13 @@ interface CatalogDao {
         """
     )
     suspend fun refs(mediaType: String, tmdbIds: List<Int>): List<CatalogRef>
+
+    /**
+     * Pares (id local, tmdbId) de los títulos presentes en el catálogo. Se usa
+     * para enlazar géneros descubiertos en TMDB sin cargar la fila completa.
+     */
+    @Query("SELECT id, tmdbId FROM catalog_items WHERE mediaType = :mediaType AND tmdbId IN (:tmdbIds)")
+    suspend fun idRefs(mediaType: String, tmdbIds: List<Int>): List<CatalogIdRef>
 
     @Query("SELECT * FROM catalog_items WHERE tmdbId = :tmdbId AND mediaType = :mediaType LIMIT 1")
     suspend fun find(tmdbId: Int, mediaType: String): CatalogItemEntity?

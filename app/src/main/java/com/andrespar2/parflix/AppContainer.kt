@@ -50,6 +50,7 @@ class AppContainer(context: Context) {
 
     val catalogRepository = CatalogRepository(
         database = database,
+        tmdb = providers.tmdb,
         networkMonitor = networkMonitor,
         preferences = preferences,
         synchronizer = catalogSynchronizer,

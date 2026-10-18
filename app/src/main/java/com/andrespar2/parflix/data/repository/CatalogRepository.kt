@@ -6,8 +6,10 @@ import com.andrespar2.parflix.core.util.TimeUtils
 import com.andrespar2.parflix.data.local.ParFlixDatabase
 import com.andrespar2.parflix.data.local.entity.CatalogItemEntity
 import com.andrespar2.parflix.data.local.entity.GenreEntity
+import com.andrespar2.parflix.data.local.entity.GenreLinkEntity
 import com.andrespar2.parflix.data.preferences.UserPreferences
 import com.andrespar2.parflix.data.preferences.UserSettings
+import com.andrespar2.parflix.data.remote.TmdbApi
 import com.andrespar2.parflix.data.sync.CatalogSynchronizer
 import com.andrespar2.parflix.data.sync.SyncOutcome
 import com.andrespar2.parflix.data.sync.SyncProgress
@@ -25,6 +27,7 @@ import kotlinx.coroutines.withContext
  */
 class CatalogRepository(
     private val database: ParFlixDatabase,
+    private val tmdb: TmdbApi,
     val networkMonitor: NetworkMonitor,
     private val preferences: UserPreferences,
     private val synchronizer: CatalogSynchronizer,
@@ -32,6 +35,9 @@ class CatalogRepository(
 
     private val catalogDao = database.catalogDao()
     private val genreDao = database.genreDao()
+
+    /** Evita pedir el mismo género dos veces a la vez (varias pantallas). */
+    private val genreSyncInFlight = mutableSetOf<String>()
 
     val syncProgress: StateFlow<SyncProgress> = synchronizer.progress
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
@@ -56,6 +62,58 @@ class CatalogRepository(
 
     fun observeByGenre(genreId: Int, mediaType: MediaType?, limit: Int = 20): Flow<List<CatalogItemEntity>> =
         catalogDao.observeByGenre(genreId, mediaType?.name, limit).flowOn(Dispatchers.IO)
+
+    /**
+     * Garantiza contenido en la fila de un género.
+     *
+     * Hasta ahora los enlaces título↔género solo se creaban al enriquecer cada
+     * título con TMDB, así que las categorías de las películas (y buena parte
+     * de series/anime) salían vacías. Este método consulta TMDB Discover para el
+     * género y enlaza los títulos que YA existen en el catálogo local; no
+     * inventa nada ni muestra títulos que no se puedan ver.
+     */
+    suspend fun syncGenreLinks(
+        mediaType: MediaType,
+        genreId: Int,
+        target: Int = 60,
+        maxPages: Int = 25,
+    ): Int = withContext(Dispatchers.IO) {
+        if (!networkMonitor.currentlyOnline()) return@withContext 0
+
+        val key = "${mediaType.name}:$genreId"
+        synchronized(genreSyncInFlight) {
+            if (!genreSyncInFlight.add(key)) return@withContext 0
+        }
+
+        try {
+            val linkedIds = LinkedHashSet<Long>()
+            var page = 1
+            while (page <= maxPages && linkedIds.size < target) {
+                val response = runCatching {
+                    if (mediaType == MediaType.MOVIE) {
+                        tmdb.discoverMovies(genreId, page)
+                    } else {
+                        tmdb.discoverTv(genreId, page)
+                    }
+                }.getOrNull() ?: break
+
+                val tmdbIds = response.results.orEmpty().mapNotNull { it.id }
+                if (tmdbIds.isEmpty()) break
+                catalogDao.idRefs(mediaType.name, tmdbIds).forEach { linkedIds += it.id }
+
+                val totalPages = response.totalPages ?: page
+                if (page >= totalPages) break
+                page++
+            }
+
+            if (linkedIds.isNotEmpty()) {
+                genreDao.linkGenres(linkedIds.map { GenreLinkEntity(it, genreId) })
+            }
+            linkedIds.size
+        } finally {
+            synchronized(genreSyncInFlight) { genreSyncInFlight.remove(key) }
+        }
+    }
 
     fun observeGenres(mediaType: MediaType): Flow<List<GenreEntity>> =
         genreDao.observeGenres(mediaType.name).flowOn(Dispatchers.IO)
