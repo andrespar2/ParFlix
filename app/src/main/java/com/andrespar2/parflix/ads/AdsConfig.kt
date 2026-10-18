@@ -15,10 +15,12 @@ object AdsConfig {
     const val START_IO_APP_ID = "209689415"
 
     /**
-     * Los anuncios de prueba solo se activan en builds de depuración.
-     * En release se solicitan anuncios reales, sujetos a inventario.
+     * Anuncios reales en todas las variantes: ParFlix ya no muestra solo las
+     * campañas de prueba. Si en el futuro se necesita volver a las pruebas,
+     * basta con poner esta constante en `true` (solo afecta a builds de
+     * depuración).
      */
-    const val TEST_ADS_IN_DEBUG = true
+    const val TEST_ADS_IN_DEBUG = false
 
     /**
      * Los "return ads" (anuncios al salir de la app) están desactivados:
