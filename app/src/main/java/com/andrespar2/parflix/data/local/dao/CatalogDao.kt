@@ -130,6 +130,29 @@ interface CatalogDao {
     @Query("SELECT COUNT(*) FROM catalog_items")
     fun observeTotalCount(): Flow<Int>
 
+    /**
+     * De los [tmdbIds] indicados, devuelve los que realmente se pueden
+     * reproducir: películas con URL de Vimeus o series/anime con al menos un
+     * episodio disponible. Se usa para no recomendar títulos no disponibles.
+     */
+    @Query(
+        """
+        SELECT tmdbId FROM catalog_items
+        WHERE mediaType = :mediaType
+          AND tmdbId IN (:tmdbIds)
+          AND (
+            (embedUrl IS NOT NULL AND embedUrl != '')
+            OR EXISTS (
+              SELECT 1 FROM episodes e
+              WHERE e.tmdbId = catalog_items.tmdbId
+                AND e.mediaType = :mediaType
+                AND e.available = 1
+            )
+          )
+        """
+    )
+    suspend fun availableTmdbIds(mediaType: String, tmdbIds: List<Int>): List<Int>
+
     @Query("SELECT COUNT(*) FROM catalog_items WHERE enriched = 0")
     fun observePendingEnrichment(): Flow<Int>
 

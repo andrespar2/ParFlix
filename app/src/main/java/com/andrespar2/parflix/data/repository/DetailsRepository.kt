@@ -10,6 +10,7 @@ import com.andrespar2.parflix.data.local.entity.EpisodeEntity
 import com.andrespar2.parflix.data.local.entity.GenreEntity
 import com.andrespar2.parflix.data.local.entity.GenreLinkEntity
 import com.andrespar2.parflix.data.local.model.JsonStore
+import com.andrespar2.parflix.data.local.model.StoredRecommendation
 import com.andrespar2.parflix.data.remote.TmdbApi
 import com.andrespar2.parflix.data.remote.VimeusApi
 import com.andrespar2.parflix.data.remote.mapper.TmdbMappers
@@ -70,11 +71,41 @@ class DetailsRepository(
                 countries = JsonStore.decodeCountries(details?.countriesJson),
                 languages = JsonStore.decodeLanguages(details?.languagesJson),
                 videos = JsonStore.decodeVideos(details?.videosJson),
-                recommendations = JsonStore.decodeRecommendations(details?.recommendationsJson),
+                recommendations = filterAvailableRecommendations(
+                    JsonStore.decodeRecommendations(details?.recommendationsJson),
+                ),
                 seasons = JsonStore.decodeSeasons(details?.seasonsJson),
                 altTitles = alts.map { it.title },
             )
         }.flowOn(Dispatchers.Default)
+    }
+
+    /**
+     * Deja solo las recomendaciones que el usuario puede reproducir hoy:
+     * presentes en el catálogo local y con una fuente real (URL de Vimeus para
+     * películas o al menos un episodio disponible para series/anime).
+     *
+     * Así la sección "Recomendaciones" nunca ofrece títulos que no se pueden ver.
+     */
+    private suspend fun filterAvailableRecommendations(
+        recommendations: List<StoredRecommendation>,
+    ): List<StoredRecommendation> {
+        if (recommendations.isEmpty()) return recommendations
+
+        val availableKeys = HashSet<String>()
+        recommendations.groupBy { it.mediaType }.forEach { (typeName, list) ->
+            val type = MediaType.fromString(typeName) ?: return@forEach
+            val ids = list.map { it.tmdbId }.distinct()
+            if (ids.isEmpty()) return@forEach
+            catalogDao.availableTmdbIds(type.name, ids).forEach { id ->
+                availableKeys += "${type.name}:$id"
+            }
+        }
+
+        return recommendations.filter { rec ->
+            val type = MediaType.fromString(rec.mediaType) ?: return@filter false
+            availableKeys.contains("${type.name}:${rec.tmdbId}")
+        }
     }
 
     fun observeSeasonEpisodes(tmdbId: Int, mediaType: MediaType, season: Int): Flow<List<EpisodeEntity>> =
