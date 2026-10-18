@@ -182,6 +182,9 @@ fun ParFlixNavHost() {
                     onPlay = { type, id, season, episode ->
                         navController.navigate(Routes.player(type.name, id, season, episode))
                     },
+                    onOpenDetails = { type, id ->
+                        navController.navigate(Routes.details(type.name, id))
+                    },
                 )
             }
 

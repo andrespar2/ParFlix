@@ -73,6 +73,7 @@ fun DetailsScreen(
     tmdbId: Int,
     onBack: () -> Unit,
     onPlay: (mediaType: MediaType, tmdbId: Int, season: Int, episode: Int) -> Unit,
+    onOpenDetails: (MediaType, Int) -> Unit,
 ) {
     val container = rememberContainer()
     val viewModel: DetailsViewModel = viewModel(
@@ -162,6 +163,7 @@ fun DetailsScreen(
                     )
                     runCatching { context.startActivity(intent) }
                 },
+                onOpenRecommendation = onOpenDetails,
             )
         }
     }
@@ -180,6 +182,7 @@ private fun DetailsContent(
     onPlayItem: () -> Unit,
     onPlayEpisode: (EpisodeEntity) -> Unit,
     onOpenTrailer: (String) -> Unit,
+    onOpenRecommendation: (MediaType, Int) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -310,7 +313,10 @@ private fun DetailsContent(
                                 year = rec.year,
                                 rating = rec.voteAverage,
                             ),
-                            onClick = {},
+                            onClick = {
+                                val type = MediaType.fromString(rec.mediaType) ?: view.mediaType
+                                onOpenRecommendation(type, rec.tmdbId)
+                            },
                         )
                     }
                 }
