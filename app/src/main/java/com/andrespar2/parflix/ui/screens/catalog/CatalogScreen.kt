@@ -62,6 +62,7 @@ fun CatalogScreen(
     val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
     val total by viewModel.totalCount.collectAsStateWithLifecycle(0)
     val nativeAds by viewModel.nativeAds.collectAsStateWithLifecycle(emptyList())
+    val adsInitialized by container.adsManager.isInitialized.collectAsStateWithLifecycle()
 
     val gridState = rememberLazyGridState()
 
@@ -74,8 +75,11 @@ fun CatalogScreen(
     // ranuras disponibles. Al cambiar el número de anuncios cargados se vuelve
     // a evaluar (permite cargar el segundo sin bucles: el ViewModel y
     // AdsManager aplican el enfriamiento y el tope por pantalla).
-    LaunchedEffect(items.size, nativeAds.size, container.adsManager.isInitialized) {
-        viewModel.requestNativeAds(items.size)
+    // Al completarse la inicialización del SDK, el efecto se vuelve a evaluar
+    // y solicita los nativos que aún falten (evita quedarse sin anuncios si el
+    // catálogo se mostró antes de que Start.io terminara de arrancar).
+    LaunchedEffect(items.size, nativeAds.size, adsInitialized) {
+        if (adsInitialized) viewModel.requestNativeAds(items.size)
     }
 
     // Paginación local: al acercarse al final se amplía la ventana visible.
