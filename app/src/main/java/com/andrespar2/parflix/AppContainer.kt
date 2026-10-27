@@ -1,7 +1,7 @@
 package com.andrespar2.parflix
 
 import android.content.Context
-import com.andrespar2.parflix.ads.AdsManager
+import com.andrespar2.parflix.ads.AdManager
 import com.andrespar2.parflix.core.network.NetworkMonitor
 import com.andrespar2.parflix.core.network.Providers
 import com.andrespar2.parflix.core.security.CredentialStore
@@ -63,8 +63,8 @@ class AppContainer(context: Context) {
 
     val libraryRepository = LibraryRepository(database)
 
-    /** Gestión de publicidad (Start.io). Se inicializa una vez en [ParFlixApp]. */
-    val adsManager = AdsManager(appContext)
+    /** Gestión de publicidad. No inicializa SDK externos. */
+    val adsManager = AdManager(appContext, networkMonitor)
 
     val syncScheduler = SyncScheduler(appContext)
 }

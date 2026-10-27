@@ -15,22 +15,22 @@ object AdsDistribution {
      * Posiciones donde insertar anuncios nativos para un catálogo de
      * [itemCount] elementos reales.
      *
-     * - Primer anuncio tras [AdsConfig.NATIVE_FIRST_AFTER_CARDS] tarjetas.
-     * - Después, como mínimo uno cada [AdsConfig.NATIVE_MIN_GAP_BETWEEN_ADS].
-     * - Nunca más de [AdsConfig.NATIVE_MAX_PER_SCREEN] por pantalla.
+     * - Primer anuncio tras [AdConfiguration.NATIVE_FIRST_AFTER_CARDS] tarjetas.
+     * - Después, como mínimo uno cada [AdConfiguration.NATIVE_MIN_GAP_BETWEEN_ADS].
+     * - Nunca más de [AdConfiguration.NATIVE_MAX_PER_SCREEN] por pantalla.
      * - Jamás en la última posición (el anuncio siempre tiene contenido detrás).
      */
     fun nativeAdPositions(
         itemCount: Int,
-        maxAds: Int = AdsConfig.NATIVE_MAX_PER_SCREEN,
+        maxAds: Int = AdConfiguration.NATIVE_MAX_PER_SCREEN,
     ): List<Int> {
-        if (maxAds <= 0 || itemCount <= AdsConfig.NATIVE_FIRST_AFTER_CARDS) return emptyList()
+        if (maxAds <= 0 || itemCount <= AdConfiguration.NATIVE_FIRST_AFTER_CARDS) return emptyList()
 
         val positions = mutableListOf<Int>()
-        var next = AdsConfig.NATIVE_FIRST_AFTER_CARDS
+        var next = AdConfiguration.NATIVE_FIRST_AFTER_CARDS
         while (positions.size < maxAds && next < itemCount) {
             positions.add(next)
-            next += AdsConfig.NATIVE_MIN_GAP_BETWEEN_ADS
+            next += AdConfiguration.NATIVE_MIN_GAP_BETWEEN_ADS
         }
         return positions
     }

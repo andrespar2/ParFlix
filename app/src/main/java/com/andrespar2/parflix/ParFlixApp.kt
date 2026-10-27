@@ -34,8 +34,8 @@ class ParFlixApp : Application(), Configuration.Provider {
         instance = this
         container = AppContainer(this)
 
-        // Start.io se inicializa una sola vez, sin ads de retorno ni formatos
-        // automáticos. Ver AdsConfig para identificadores y frecuencias.
+        // La publicidad de Android queda preparada pero no solicita anuncios
+        // mientras falte autorización escrita del proveedor. Ver AdConfiguration.
         container.adsManager.init()
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(

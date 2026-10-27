@@ -1,4 +1,4 @@
-package com.andrespar2.parflix.ads
+﻿package com.andrespar2.parflix.ads
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -17,15 +17,15 @@ class AdsDistributionTest {
         assertTrue(AdsDistribution.nativeAdPositions(0).isEmpty())
         assertTrue(AdsDistribution.nativeAdPositions(1).isEmpty())
         assertTrue(
-            AdsDistribution.nativeAdPositions(AdsConfig.NATIVE_FIRST_AFTER_CARDS).isEmpty(),
+            AdsDistribution.nativeAdPositions(AdConfiguration.NATIVE_FIRST_AFTER_CARDS).isEmpty(),
         )
     }
 
     @Test
     fun `el primer anuncio va tras las tarjetas configuradas`() {
         assertEquals(
-            listOf(AdsConfig.NATIVE_FIRST_AFTER_CARDS),
-            AdsDistribution.nativeAdPositions(AdsConfig.NATIVE_FIRST_AFTER_CARDS + 1),
+            listOf(AdConfiguration.NATIVE_FIRST_AFTER_CARDS),
+            AdsDistribution.nativeAdPositions(AdConfiguration.NATIVE_FIRST_AFTER_CARDS + 1),
         )
     }
 
@@ -35,7 +35,7 @@ class AdsDistributionTest {
 
         assertEquals(2, positions.size)
         assertEquals(
-            AdsConfig.NATIVE_MIN_GAP_BETWEEN_ADS,
+            AdConfiguration.NATIVE_MIN_GAP_BETWEEN_ADS,
             positions[1] - positions[0],
         )
     }
@@ -43,7 +43,7 @@ class AdsDistributionTest {
     @Test
     fun `nunca supera el maximo por pantalla`() {
         val positions = AdsDistribution.nativeAdPositions(itemCount = 10_000)
-        assertEquals(AdsConfig.NATIVE_MAX_PER_SCREEN, positions.size)
+        assertEquals(AdConfiguration.NATIVE_MAX_PER_SCREEN, positions.size)
     }
 
     @Test

@@ -49,15 +49,5 @@
                 tools:node="remove" />
         </provider>
 
-        <!--
-            Start.io: solo se usan banner y anuncios nativos solicitados de
-            forma explícita desde la interfaz. No se declaran permisos de
-            ubicación ni otros sensibles: el SDK funciona sin ellos.
-            La clave APPLICATION_ID la lee el propio SDK (StartAppInitProvider);
-            además se inicializa con el mismo ID en AdsManager.
-        -->
-        <meta-data
-            android:name="com.startapp.sdk.APPLICATION_ID"
-            android:value="209689415" />
     </application>
 </manifest>

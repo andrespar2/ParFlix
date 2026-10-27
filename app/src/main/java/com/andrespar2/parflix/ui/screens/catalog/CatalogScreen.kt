@@ -27,8 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
@@ -36,10 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.andrespar2.parflix.ads.AdLoadState
+import com.andrespar2.parflix.ads.AdPlacement
 import com.andrespar2.parflix.domain.MediaType
 import com.andrespar2.parflix.ui.components.EmptyState
 import com.andrespar2.parflix.ui.components.LoadingBox
-import com.andrespar2.parflix.ui.components.ParFlixNativeAdCard
+import com.andrespar2.parflix.ui.components.NativeAdContainer
 import com.andrespar2.parflix.ui.components.PosterCard
 import com.andrespar2.parflix.ui.model.toCard
 import com.andrespar2.parflix.ui.rememberContainer
@@ -63,25 +67,29 @@ fun CatalogScreen(
     val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
     val genreLoading by viewModel.genreLoading.collectAsStateWithLifecycle()
     val total by viewModel.totalCount.collectAsStateWithLifecycle(0)
-    val nativeAds by viewModel.nativeAds.collectAsStateWithLifecycle(emptyList())
-    val adsInitialized by container.adsManager.isInitialized.collectAsStateWithLifecycle()
+
+    val nativeController = remember(container.adsManager) {
+        container.adsManager.controller(AdPlacement.CATALOG_NATIVE)
+    }
+    val nativeAdState by nativeController.state.collectAsStateWithLifecycle()
+
+    // La pantalla mantiene activo el espacio nativo aunque todavía no haya
+    // creatividad; en cuanto el controlador se recupera, la celda aparece sin
+    // recargar el catálogo.
+    DisposableEffect(nativeController) {
+        nativeController.acquire()
+        onDispose { nativeController.release() }
+    }
+
+    val hasNativeAd = nativeAdState is AdLoadState.Ready || nativeAdState is AdLoadState.Visible
 
     val gridState = rememberLazyGridState()
 
-    // Intercala los anuncios nativos ya cargados entre las tarjetas reales.
     // Las claves de las tarjetas se mantienen estables, así que insertar
-    // publicidad no recompone ni reinicia la posición del contenido.
-    val cells = remember(items, nativeAds) { buildCatalogCells(items, nativeAds) }
-
-    // Pide anuncios nativos solo cuando hay contenido suficiente para las
-    // ranuras disponibles. Al cambiar el número de anuncios cargados se vuelve
-    // a evaluar (permite cargar el segundo sin bucles: el ViewModel y
-    // AdsManager aplican el enfriamiento y el tope por pantalla).
-    // Al completarse la inicialización del SDK, el efecto se vuelve a evaluar
-    // y solicita los nativos que aún falten (evita quedarse sin anuncios si el
-    // catálogo se mostró antes de que Start.io terminara de arrancar).
-    LaunchedEffect(items.size, nativeAds.size, adsInitialized) {
-        if (adsInitialized) viewModel.requestNativeAds(items.size)
+    // publicidad no recompone ni reinicia la posición del contenido. Sin
+    // creatividad lista, la cuadrícula no reserva ningún hueco.
+    val cells = remember(items, hasNativeAd) {
+        buildCatalogCells(items, sponsoredCount = if (hasNativeAd) 1 else 0)
     }
 
     // Paginación local: al acercarse al final se amplía la ventana visible.
@@ -184,8 +192,8 @@ fun CatalogScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             )
 
-                            is CatalogCell.Sponsored -> ParFlixNativeAdCard(
-                                ad = cell.ad,
+                            is CatalogCell.Sponsored -> NativeAdContainer(
+                                controller = nativeController,
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }

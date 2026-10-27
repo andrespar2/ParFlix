@@ -2,14 +2,13 @@ package com.andrespar2.parflix.ui.screens.catalog
 
 import com.andrespar2.parflix.ads.AdsDistribution
 import com.andrespar2.parflix.data.local.entity.CatalogItemEntity
-import com.startapp.sdk.ads.nativead.NativeAdDetails
 
 /**
- * Elemento de la cuadrícula del catálogo: contenido real o anuncio nativo.
+ * Elemento de la cuadrícula del catálogo: contenido real o espacio nativo.
  *
  * Mantener las claves estables de las tarjetas reales evita que Compose
- * recree elementos al insertar publicidad. Los anuncios usan su propia clave,
- * que nunca puede chocar con la de un título.
+ * recree elementos al insertar publicidad. Los espacios nativos usan su propia
+ * clave, que nunca puede chocar con la de un título.
  */
 sealed interface CatalogCell {
     val key: String
@@ -21,7 +20,6 @@ sealed interface CatalogCell {
     }
 
     data class Sponsored(
-        val ad: NativeAdDetails,
         val position: Int,
     ) : CatalogCell {
         override val key: String = "sponsored:$position"
@@ -29,28 +27,28 @@ sealed interface CatalogCell {
 }
 
 /**
- * Intercala los anuncios nativos disponibles en la lista real según las
- * reglas de [AdsDistribution]. Si hay menos anuncios que ranuras, simplemente
- * se muestran los que haya; nunca se reordena ni se altera el contenido.
+ * Intercala espacios nativos en la lista real según [AdsDistribution].
+ *
+ * [sponsoredCount] es el número de creatividades realmente listas. Si es 0 no
+ * se inserta ningún hueco; el catálogo se ve exactamente igual que sin
+ * publicidad. Nunca se reordena ni se altera el contenido.
  */
 fun buildCatalogCells(
     items: List<CatalogItemEntity>,
-    ads: List<NativeAdDetails>,
+    sponsoredCount: Int,
 ): List<CatalogCell> {
-    if (items.isEmpty()) return emptyList()
-
-    val positions = AdsDistribution.nativeAdPositions(items.size)
-    if (positions.isEmpty() || ads.isEmpty()) {
+    if (items.isEmpty() || sponsoredCount <= 0) {
         return items.map { CatalogCell.Content(it) }
     }
 
-    // Asocia cada posición con un anuncio (como máximo hay tantas posiciones
-    // como anuncios cargados).
-    val adByPosition = positions.zip(ads).toMap()
+    val positions = AdsDistribution.nativeAdPositions(items.size)
+        .take(sponsoredCount)
+    if (positions.isEmpty()) return items.map { CatalogCell.Content(it) }
 
-    val cells = ArrayList<CatalogCell>(items.size + adByPosition.size)
+    val sponsoredAt = positions.toSet()
+    val cells = ArrayList<CatalogCell>(items.size + sponsoredAt.size)
     items.forEachIndexed { index, item ->
-        adByPosition[index]?.let { ad -> cells.add(CatalogCell.Sponsored(ad, index)) }
+        if (index in sponsoredAt) cells.add(CatalogCell.Sponsored(position = index))
         cells.add(CatalogCell.Content(item))
     }
     return cells

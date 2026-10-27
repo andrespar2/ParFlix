@@ -28,8 +28,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.andrespar2.parflix.ads.AdPlacement
 import com.andrespar2.parflix.domain.MediaType
-import com.andrespar2.parflix.ui.components.ParFlixBannerAd
+import com.andrespar2.parflix.ui.components.BannerAdContainer
 import com.andrespar2.parflix.ui.rememberContainer
 import com.andrespar2.parflix.ui.screens.about.AboutScreen
 import com.andrespar2.parflix.ui.screens.catalog.CatalogScreen
@@ -65,9 +66,11 @@ fun ParFlixNavHost() {
         currentRoute == Routes.SEARCH ||
         catalogRoutes.contains(currentRoute)
 
-    // El banner solo aparece en pantallas de catálogo. Nunca en el reproductor,
-    // detalles, biblioteca, ajustes ni diálogos.
-    val showBanner = currentRoute == Routes.HOME || catalogRoutes.contains(currentRoute)
+    // El banner solo aparece en pantallas de exploración. Nunca en el
+    // reproductor, detalles, biblioteca, ajustes ni diálogos.
+    val showBanner = currentRoute == Routes.HOME ||
+        currentRoute == Routes.SEARCH ||
+        catalogRoutes.contains(currentRoute)
 
     val container = rememberContainer()
 
@@ -82,7 +85,9 @@ fun ParFlixNavHost() {
                 // en la misma posición del árbol, cambiar de pestaña no lo
                 // duplica ni vuelve a pedir inventario.
                 if (showBanner) {
-                    ParFlixBannerAd(adsManager = container.adsManager)
+                    BannerAdContainer(
+                        controller = container.adsManager.controller(AdPlacement.MAIN_BANNER),
+                    )
                 }
                 if (showBottomBar) {
                     NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
