@@ -61,8 +61,11 @@ import com.andrespar2.parflix.core.util.ImageUrls
 import com.andrespar2.parflix.data.local.entity.EpisodeEntity
 import com.andrespar2.parflix.domain.MediaDetailsView
 import com.andrespar2.parflix.domain.MediaType
+import com.andrespar2.parflix.ads.AdController
+import com.andrespar2.parflix.ads.AdPlacement
 import com.andrespar2.parflix.ui.components.EmptyState
 import com.andrespar2.parflix.ui.components.LoadingBox
+import com.andrespar2.parflix.ui.components.NativeAdContainer
 import com.andrespar2.parflix.ui.components.RatingChip
 import com.andrespar2.parflix.ui.rememberContainer
 
@@ -76,6 +79,9 @@ fun DetailsScreen(
     onOpenDetails: (MediaType, Int) -> Unit,
 ) {
     val container = rememberContainer()
+    val detailsAdController = remember(container.adsManager) {
+        container.adsManager.controller(AdPlacement.DETAILS_NATIVE)
+    }
     val viewModel: DetailsViewModel = viewModel(
         key = "details-${mediaType.name}-$tmdbId",
         factory = DetailsViewModel.factory(container, mediaType, tmdbId),
@@ -164,6 +170,7 @@ fun DetailsScreen(
                     runCatching { context.startActivity(intent) }
                 },
                 onOpenRecommendation = onOpenDetails,
+                adController = detailsAdController,
             )
         }
     }
@@ -183,6 +190,7 @@ private fun DetailsContent(
     onPlayEpisode: (EpisodeEntity) -> Unit,
     onOpenTrailer: (String) -> Unit,
     onOpenRecommendation: (MediaType, Int) -> Unit,
+    adController: AdController,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -303,6 +311,13 @@ private fun DetailsContent(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    item(key = "recommendations-sponsored") {
+                        NativeAdContainer(
+                            controller = adController,
+                            modifier = Modifier.width(260.dp),
+                            adHeight = 220.dp,
+                        )
+                    }
                     items(view.recommendations.take(20), key = { "${it.mediaType}:${it.tmdbId}" }) { rec ->
                         com.andrespar2.parflix.ui.components.PosterCard(
                             data = com.andrespar2.parflix.ui.model.MediaCardData(

@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andrespar2.parflix.ads.AdConfiguration
@@ -103,7 +104,10 @@ fun BannerAdContainer(
 fun NativeAdContainer(
     controller: AdController,
     modifier: Modifier = Modifier,
+    adHeight: Dp = 300.dp,
 ) {
+    if (!AdWebViewSupport.isSupported()) return
+
     val state by controller.state.collectAsStateWithLifecycle()
 
     DisposableEffect(controller) {
@@ -117,7 +121,6 @@ fun NativeAdContainer(
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(12.dp),
@@ -143,7 +146,7 @@ fun NativeAdContainer(
                 modifier = Modifier
                     .clipToBounds()
                     .fillMaxWidth()
-                    .height(NATIVE_HEIGHT),
+                    .height(adHeight),
             )
         }
     }
@@ -151,4 +154,3 @@ fun NativeAdContainer(
 
 private val BANNER_WIDTH = 320.dp
 private val BANNER_HEIGHT = 50.dp
-private val NATIVE_HEIGHT = 300.dp

@@ -13,6 +13,7 @@ enum class AdPlacement(
 ) {
     MAIN_BANNER(AdFormat.BANNER_320X50, AdConfiguration.AD_LABEL),
     CATALOG_NATIVE(AdFormat.NATIVE, AdConfiguration.SPONSORED_LABEL),
+    DETAILS_NATIVE(AdFormat.NATIVE, AdConfiguration.SPONSORED_LABEL),
 }
 
 /** Resultado de la comprobación de autorización de un proveedor. */
