@@ -8,8 +8,30 @@ permissions:
   contents: write
 
 jobs:
+  # Si la release ya fue creada desde el equipo de desarrollo con el APK
+  # firmado, el workflow no la toca ni sube artefactos alternativos.
+  guard:
+    name: Comprobar release existente
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Buscar release publicada
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "La release ${{ github.ref_name }} ya existe; no se modifica."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   release:
     name: Construir y publicar APK
+    needs: guard
+    if: needs.guard.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +51,15 @@ jobs:
       - name: Ensamblar APK release
         run: ./gradlew :app:assembleRelease --console=plain
 
+      # Nunca publicar un APK sin firma ni firmado con la clave de depuración.
+      - name: Verificar firma de distribución
+        run: |
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -n1)
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n1)
+          "$APKSIGNER" verify --print-certs "$APK"
+
       - name: Renombrar APK
-        run: cp app/build/outputs/apk/release/*.apk ParFlix-${{ github.ref_name }}.apk
+        run: cp app/build/outputs/apk/release/*.apk "ParFlix-${{ github.ref_name }}.apk"
 
       - name: Publicar release
         env:

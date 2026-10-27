@@ -110,8 +110,8 @@ android {
         applicationId = "com.andrespar2.parflix"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -145,7 +145,6 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
-                ?: signingConfigs.getByName("debug")
         }
         debug {
             applicationIdSuffix = ".debug"
