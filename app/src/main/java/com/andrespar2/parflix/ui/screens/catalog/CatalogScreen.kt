@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andrespar2.parflix.ads.AdLoadState
 import com.andrespar2.parflix.ads.AdPlacement
+import com.andrespar2.parflix.ads.AdWebViewSupport
 import com.andrespar2.parflix.domain.MediaType
 import com.andrespar2.parflix.ui.components.EmptyState
 import com.andrespar2.parflix.ui.components.LoadingBox
@@ -68,6 +69,7 @@ fun CatalogScreen(
     val genreLoading by viewModel.genreLoading.collectAsStateWithLifecycle()
     val total by viewModel.totalCount.collectAsStateWithLifecycle(0)
 
+    val adsSupported = remember { AdWebViewSupport.isSupported() }
     val nativeController = remember(container.adsManager) {
         container.adsManager.controller(AdPlacement.CATALOG_NATIVE)
     }
@@ -75,13 +77,14 @@ fun CatalogScreen(
 
     // La pantalla mantiene activo el espacio nativo aunque todavía no haya
     // creatividad; en cuanto el controlador se recupera, la celda aparece sin
-    // recargar el catálogo.
-    DisposableEffect(nativeController) {
-        nativeController.acquire()
-        onDispose { nativeController.release() }
+    // recargar el catálogo. En WebView antiguas no se solicita publicidad.
+    DisposableEffect(nativeController, adsSupported) {
+        if (adsSupported) nativeController.acquire()
+        onDispose { if (adsSupported) nativeController.release() }
     }
 
-    val hasNativeAd = nativeAdState is AdLoadState.Ready || nativeAdState is AdLoadState.Visible
+    val hasNativeAd = adsSupported &&
+        (nativeAdState is AdLoadState.Ready || nativeAdState is AdLoadState.Visible)
 
     val gridState = rememberLazyGridState()
 

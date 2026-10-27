@@ -1,6 +1,5 @@
 package com.andrespar2.parflix.ui.components
 
-import android.webkit.WebView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andrespar2.parflix.ads.AdConfiguration
 import com.andrespar2.parflix.ads.AdController
 import com.andrespar2.parflix.ads.AdCreative
+import com.andrespar2.parflix.ads.AdWebViewSupport
 
 /**
  * Contenedor del banner 320x50.
@@ -43,9 +43,8 @@ fun BannerAdContainer(
     modifier: Modifier = Modifier,
 ) {
     // El banner de Adsterra no se representa de forma fiable en WebView muy
-    // antiguas. En esos equipos se mantiene el anuncio nativo, que sí funciona,
-    // y no se reserva un hueco vacío.
-    if (!isBannerSupportedByWebView()) return
+    // antiguas. En esos equipos no se reserva un hueco vacío.
+    if (!AdWebViewSupport.isSupported()) return
 
     val state by controller.state.collectAsStateWithLifecycle()
 
@@ -153,14 +152,3 @@ fun NativeAdContainer(
 private val BANNER_WIDTH = 320.dp
 private val BANNER_HEIGHT = 50.dp
 private val NATIVE_HEIGHT = 300.dp
-
-private const val MIN_WEBVIEW_MAJOR_FOR_BANNER = 100
-
-private fun isBannerSupportedByWebView(): Boolean {
-    val packageInfo = WebView.getCurrentWebViewPackage() ?: return false
-    val major = packageInfo.versionName
-        ?.substringBefore('.')
-        ?.toIntOrNull()
-        ?: return false
-    return major >= MIN_WEBVIEW_MAJOR_FOR_BANNER
-}
