@@ -160,8 +160,9 @@ Cada APK se publica como Release en GitHub con su APK adjunto.
   funcionamiento interno de las unidades.
 - La aplicación Android carga dos páginas dedicadas del sitio aprobado:
   `ad-banner.html` para el banner 320×50 y `ad-native.html?app=1` para una
-  tarjeta nativa compacta. No se inyecta la etiqueta en un documento local ni se
-  falsifica el origen, el User-Agent o las métricas.
+  tarjeta nativa compacta. El anuncio nativo aparece en el catálogo y en la
+  sección de recomendaciones de cada ficha. No se inyecta la etiqueta en un
+  documento local ni se falsifica el origen, el User-Agent o las métricas.
 - El banner se oculta en WebView anteriores a la versión principal 100 y cuando
   no hay creatividad visible. El anuncio nativo ocupa una celda del catálogo y
   se retira si el proveedor no devuelve contenido. La app sigue funcionando si
