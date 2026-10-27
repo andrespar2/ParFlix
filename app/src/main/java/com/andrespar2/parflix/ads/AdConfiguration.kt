@@ -33,28 +33,37 @@ object AdConfiguration {
         "https://bancadeltempoidea.org/21/0b49e206ab92aabeebe7d6c0c2ac4ebd"
 
     /**
-     * Las unidades facilitadas son etiquetas web. Antes de cargarlas dentro de
-     * una WebView de la APK hace falta autorización escrita de Adsterra:
-     * sus términos para publishers limitan la etiqueta a páginas del sitio
-     * aprobado (andrespar2.github.io) y exigen consentimiento previo para
-     * iframes. Mientras no exista esa autorización, la app no realiza ninguna
-     * petición publicitaria.
-     *
-     * Cambiar estos valores solo debe hacerse con la autorización documentada.
+     * Páginas dedicadas del sitio aprobado. La app carga estas URLs reales en
+     * la WebView; la etiqueta publicitaria queda en el origen registrado y no
+     * se falsifica el documento.
      */
-    const val ANDROID_WEBVIEW_AUTHORIZED = false
+    const val BANNER_PAGE_URL = "https://andrespar2.github.io/ad-banner.html"
+    const val NATIVE_PAGE_URL = "https://andrespar2.github.io/ad-native.html?app=1"
+
+    /**
+     * El propietario de ParFlix autorizó explícitamente, bajo su
+     * responsabilidad, el uso de las unidades web de Adsterra dentro de una
+     * WebView de la APK. Adsterra no ha emitido una aprobación escrita para
+     * este uso: sus términos limitan las etiquetas al sitio aprobado y no
+     * documentan un SDK de banners/nativos para Android.
+     *
+     * Esta decisión no altera el origen web, el User-Agent, las impresiones ni
+     * las interacciones. Si el proveedor cambia sus condiciones o rechaza el
+     * tráfico, basta con volver a poner estos valores en `false`.
+     */
+    const val ANDROID_WEBVIEW_AUTHORIZED = true
 
     /** Interruptores independientes por formato, además de la autorización. */
-    const val ANDROID_BANNER_ENABLED = false
-    const val ANDROID_NATIVE_ENABLED = false
+    const val ANDROID_BANNER_ENABLED = true
+    const val ANDROID_NATIVE_ENABLED = true
 
     val androidAuthorization: AdAuthorization
         get() = if (ANDROID_WEBVIEW_AUTHORIZED) {
-            AdAuthorization.Authorized("WebView autorizada para unidades Adsterra")
+            AdAuthorization.Authorized("Uso en WebView autorizado por el propietario de ParFlix")
         } else {
             AdAuthorization.PendingWrittenConsent(
                 "Las unidades Adsterra son etiquetas web para el sitio aprobado. " +
-                    "Falta autorización escrita para usarlas en una WebView de la APK."
+                    "Falta autorización para usarlas en una WebView de la APK."
             )
         }
 

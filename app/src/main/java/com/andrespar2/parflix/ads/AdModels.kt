@@ -90,12 +90,15 @@ sealed interface AdCreative {
     val format: AdFormat
 
     /**
-     * Documento HTML de una unidad web. Solo se representa cuando el formato
-     * está autorizado; el contenedor aplica las restricciones de seguridad.
+     * Unidad web de Adsterra. En Android se carga una página dedicada del
+     * sitio aprobado (`url`) para que el origen, las cookies y el script sean
+     * reales; no se inyecta la etiqueta en un documento local con un origen
+     * artificial.
      */
     data class WebTag(
-        val html: String,
+        val html: String? = null,
         override val format: AdFormat,
+        val url: String? = null,
     ) : AdCreative
 }
 

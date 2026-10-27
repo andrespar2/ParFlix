@@ -45,60 +45,12 @@ class AdsterraWebProvider : AdProvider {
             )
         }
 
-        val html = when (request.placement.format) {
-            AdFormat.BANNER_320X50 -> BANNER_HTML
-            AdFormat.NATIVE -> NATIVE_HTML
+        val url = when (request.placement.format) {
+            AdFormat.BANNER_320X50 -> AdConfiguration.BANNER_PAGE_URL
+            AdFormat.NATIVE -> AdConfiguration.NATIVE_PAGE_URL
         }
-        return AdResult.Success(AdCreative.WebTag(html = html, format = request.placement.format))
-    }
-
-    private companion object {
-        /** Código 320x50 entregado por Adsterra GET CODE. */
-        val BANNER_HTML = """
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=320, initial-scale=1">
-              <style>
-                html, body { margin: 0; padding: 0; background: #000000; overflow: hidden; }
-                iframe { border: 0; display: block; }
-                body { display: flex; align-items: center; justify-content: center; }
-              </style>
-            </head>
-            <body>
-            <script>
-              atOptions = {
-                'key': '${AdConfiguration.BANNER_KEY}',
-                'format': 'iframe',
-                'height': 50,
-                'width': 320,
-                'params': {}
-              };
-            </script>
-            <script src="${AdConfiguration.BANNER_SCRIPT_URL}"></script>
-            </body>
-            </html>
-        """.trimIndent()
-
-        /** Código Native Banner entregado por Adsterra GET CODE. */
-        val NATIVE_HTML = """
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1">
-              <style>
-                html, body { margin: 0; padding: 0; background: transparent; }
-                body { font-family: sans-serif; }
-              </style>
-            </head>
-            <body>
-            <script async="async" data-cfasync="false"
-              src="${AdConfiguration.NATIVE_SCRIPT_URL}"></script>
-            <div id="container-${AdConfiguration.NATIVE_KEY}"></div>
-            </body>
-            </html>
-        """.trimIndent()
+        return AdResult.Success(
+            AdCreative.WebTag(format = request.placement.format, url = url),
+        )
     }
 }
