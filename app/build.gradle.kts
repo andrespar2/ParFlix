@@ -24,7 +24,7 @@ plugins {
 // cualquier persona con la APK puede recuperarlos mediante ingeniería inversa.
 // ---------------------------------------------------------------------------
 
-val defaultSecrets = file("secrets.defaults.properties")
+val defaultSecrets = rootProject.file("secrets.defaults.properties")
 val privateSecrets = rootProject.file("secrets.properties")
 val secretsFile = if (privateSecrets.exists()) privateSecrets else defaultSecrets
 
