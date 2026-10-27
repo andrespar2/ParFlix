@@ -109,6 +109,10 @@ class AdController(
         synchronized(lock) {
             if (consumers == 0) return
         }
+
+        val current = _state.value
+        if (current !is AdLoadState.Ready && current !is AdLoadState.Visible) return
+
         _state.value = AdLoadState.Idle
         if (!registerFailure(failure)) return
         schedule(force = true)

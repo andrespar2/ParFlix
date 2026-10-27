@@ -188,6 +188,7 @@ fun AdsterraWebAdView(
                 }
 
                 loadCreative(creative)
+                startRenderWatchdog(this, creative.format, onFailure)
             }
             webView
         },
@@ -261,9 +262,44 @@ private fun scheduleContentCheck(
     )
 }
 
+/**
+ * Si la página nunca termina de cargar (por ejemplo, un renderizador WebView
+ * incompatible), el contenedor debe retirarse igualmente para no dejar una
+ * tarjeta vacía en la interfaz.
+ */
+private fun startRenderWatchdog(
+    view: WebView,
+    format: AdFormat,
+    onFailure: (AdFailure) -> Unit,
+) {
+    val delay = if (format == AdFormat.NATIVE) {
+        NATIVE_RENDER_WATCHDOG_MS
+    } else {
+        BANNER_RENDER_WATCHDOG_MS
+    }
+    view.postDelayed(
+        {
+            if (!view.isAttachedToWindow) return@postDelayed
+            view.evaluateJavascript(CONTENT_CHECK_JS) { result ->
+                if (result?.trim('"') != "true") {
+                    onFailure(
+                        AdFailure(
+                            AdFailureKind.NO_FILL,
+                            "La unidad no terminó de cargar",
+                        ),
+                    )
+                }
+            }
+        },
+        delay,
+    )
+}
+
 private const val USER_GESTURE_WINDOW_MS = 3_000L
-private const val BANNER_CONTENT_CHECK_DELAY_MS = 8_000L
-private const val NATIVE_CONTENT_CHECK_DELAY_MS = 15_000L
+private const val BANNER_CONTENT_CHECK_DELAY_MS = 6_000L
+private const val NATIVE_CONTENT_CHECK_DELAY_MS = 12_000L
+private const val BANNER_RENDER_WATCHDOG_MS = 9_000L
+private const val NATIVE_RENDER_WATCHDOG_MS = 15_000L
 private const val TAG = "ParFlixAds"
 
 private const val CONTENT_CHECK_JS = """
