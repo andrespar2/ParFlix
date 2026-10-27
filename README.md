@@ -158,13 +158,21 @@ Cada APK se publica como Release en GitHub con su APK adjunto.
 - El sitio web oficial integra unidades de Adsterra en el dominio registrado
   `andrespar2.github.io`, con etiquetas de publicidad visibles y sin alterar el
   funcionamiento interno de las unidades.
-- La aplicación Android no carga publicidad de terceros en esta versión. Las unidades
-  disponibles son etiquetas web y su uso dentro de una WebView requiere autorización
-  escrita del proveedor; mientras no exista, la app no realiza solicitudes
-  publicitarias ni genera impresiones.
-- El sistema de publicidad de la app está preparado para recuperarse de fallos
-  temporales sin reiniciar y respeta la conectividad, el primer plano y los límites
-  de frecuencia. No se usan anuncios simulados ni tráfico artificial.
+- La aplicación Android carga dos páginas dedicadas del sitio aprobado:
+  `ad-banner.html` para el banner 320×50 y `ad-native.html?app=1` para una
+  tarjeta nativa compacta. No se inyecta la etiqueta en un documento local ni se
+  falsifica el origen, el User-Agent o las métricas.
+- El banner se oculta en WebView anteriores a la versión principal 100 y cuando
+  no hay creatividad visible. El anuncio nativo ocupa una celda del catálogo y
+  se retira si el proveedor no devuelve contenido. La app sigue funcionando si
+  la publicidad falla.
+- El propietario de ParFlix autorizó el uso de las unidades web en WebView bajo
+  su responsabilidad. Adsterra no ha emitido una aprobación escrita específica
+  para este uso; sus términos limitan las etiquetas al sitio aprobado y no
+  documentan un SDK oficial de banners/nativos para Android.
+- El sistema de publicidad se recupera de fallos temporales sin reiniciar y
+  respeta la conectividad, el primer plano y los límites de frecuencia. No se
+  usan anuncios simulados ni tráfico artificial.
 
 ## Créditos
 

@@ -167,10 +167,16 @@ fun AboutScreen(onBack: () -> Unit) {
                 Text(
                     text = "No se recopilan datos personales ni se envían a servidores propios. " +
                         "Favoritos, historial y preferencias se guardan solo en este dispositivo. " +
-                        "Esta versión no muestra publicidad de terceros dentro de la aplicación. " +
-                        "El sitio web oficial puede incluir publicidad, sujeta a su propia política.",
+                        "La aplicación puede mostrar contenido patrocinado servido por Adsterra. " +
+                        "El proveedor puede usar cookies o identificadores para medir y personalizar " +
+                        "anuncios; tus favoritos, historial y credenciales no se comparten con él. " +
+                        "Puedes consultar la política completa en el sitio oficial.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                LinkRow(
+                    label = "Política de privacidad",
+                    onClick = { openUrl("https://andrespar2.github.io/#privacidad") },
                 )
             }
 
