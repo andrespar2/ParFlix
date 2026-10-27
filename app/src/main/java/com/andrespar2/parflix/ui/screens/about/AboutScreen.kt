@@ -166,7 +166,9 @@ fun AboutScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "No se recopilan datos personales ni se envían a servidores propios. " +
-                        "Favoritos, historial y preferencias se guardan solo en este dispositivo.",
+                        "Favoritos, historial y preferencias se guardan solo en este dispositivo. " +
+                        "Esta versión no muestra publicidad de terceros dentro de la aplicación. " +
+                        "El sitio web oficial puede incluir publicidad, sujeta a su propia política.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

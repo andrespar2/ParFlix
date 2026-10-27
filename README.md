@@ -153,6 +153,19 @@ Cada APK se publica como Release en GitHub con su APK adjunto.
 - Metadatos, imágenes y créditos: [TMDB](https://www.themoviedb.org/). Esta aplicación
   utiliza la API de TMDB pero no está respaldada ni certificada por TMDB.
 
+## Publicidad
+
+- El sitio web oficial integra unidades de Adsterra en el dominio registrado
+  `andrespar2.github.io`, con etiquetas de publicidad visibles y sin alterar el
+  funcionamiento interno de las unidades.
+- La aplicación Android no carga publicidad de terceros en esta versión. Las unidades
+  disponibles son etiquetas web y su uso dentro de una WebView requiere autorización
+  escrita del proveedor; mientras no exista, la app no realiza solicitudes
+  publicitarias ni genera impresiones.
+- El sistema de publicidad de la app está preparado para recuperarse de fallos
+  temporales sin reiniciar y respeta la conectividad, el primer plano y los límites
+  de frecuencia. No se usan anuncios simulados ni tráfico artificial.
+
 ## Créditos
 
 - **ParFlix** — aplicación desarrollada por **andrespar2**.
